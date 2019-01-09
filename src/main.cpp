@@ -9,6 +9,7 @@
 #include "LinearAllocator.h"
 #include "PoolAllocator.h"
 #include "FreeListAllocator.h"
+#include "BuddyAllocator.h"
 
 int main() {
     const std::vector<std::size_t> ALLOCATION_SIZES {32, 64, 256, 512, 1024, 2048, 4096};
@@ -19,8 +20,9 @@ int main() {
     Allocator * stackAllocator = new StackAllocator(1e9);
     Allocator * poolAllocator = new PoolAllocator(16777216, 4096);
     Allocator * freeListAllocator = new FreeListAllocator(1e8, FreeListAllocator::PlacementPolicy::FIND_FIRST);
+    Allocator * buddyAllocator = new BuddyAllocator(1<<30, 64);
 
-    Benchmark benchmark(1e1);
+    Benchmark benchmark(1e3);
 
     std::cout << "C" << std::endl;
     benchmark.MultipleAllocation(cAllocator, ALLOCATION_SIZES, ALIGNMENTS);
@@ -48,10 +50,18 @@ int main() {
     benchmark.RandomAllocation(freeListAllocator, ALLOCATION_SIZES, ALIGNMENTS);
     benchmark.RandomFree(freeListAllocator, ALLOCATION_SIZES, ALIGNMENTS);
     
+    std::cout << "BUDDY ALLOCATOR" << std::endl;
+    benchmark.MultipleAllocation(buddyAllocator, ALLOCATION_SIZES, ALIGNMENTS);
+    benchmark.MultipleFree(buddyAllocator, ALLOCATION_SIZES, ALIGNMENTS);
+    benchmark.RandomAllocation(buddyAllocator, ALLOCATION_SIZES, ALIGNMENTS);
+    benchmark.RandomFree(buddyAllocator, ALLOCATION_SIZES, ALIGNMENTS);
+
+
     delete cAllocator;
     delete linearAllocator;
     delete stackAllocator;
     delete poolAllocator;
+    delete buddyAllocator;
     
     return 1;
 }

@@ -8,12 +8,12 @@ include_directories (
 )
 
 
-set(SOURCES src/Allocator.cpp src/CAllocator.cpp src/LinearAllocator.cpp src/StackAllocator src/PoolAllocator src/FreeListAllocator.cpp src/Benchmark.cpp src/main.cpp)
+set(SOURCES src/Allocator.cpp src/CAllocator.cpp src/LinearAllocator.cpp src/StackAllocator src/PoolAllocator src/FreeListAllocator.cpp src/BuddyAllocator src/Benchmark.cpp src/main.cpp)
 
 add_compile_options(
 	-std=c++11
 #        -D_DEBUG
-#        -g
+        -g
 ) 
 
 # main.cpp

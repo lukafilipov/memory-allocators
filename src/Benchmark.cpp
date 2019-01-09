@@ -74,11 +74,13 @@ void Benchmark::RandomAllocation(Allocator* allocator, const std::vector<std::si
 
     std::cout << "\tBENCHMARK: ALLOCATION" << std::endl;
 
-    setTimer(m_start);
     std::size_t allocation_size;
     std::size_t alignment;
 
     allocator->Init();
+
+    setTimer(m_start);
+
     unsigned int operations = 0;
     while (operations < m_nOperations) {
         this->RandomAllocationAttr(allocationSizes, alignments, allocation_size, alignment);
@@ -97,13 +99,15 @@ void Benchmark::RandomFree(Allocator* allocator, const std::vector<std::size_t>&
 
     std::cout << "\tBENCHMARK: ALLOCATION/FREE" << std::endl;
 
-    setTimer(m_start);
 
     void* addresses[m_nOperations];
     std::size_t allocation_size;
     std::size_t alignment;
 
     allocator->Init();
+
+    setTimer(m_start);
+
     int operations = 0;
     while (operations < m_nOperations) {
         this->RandomAllocationAttr(allocationSizes, alignments, allocation_size, alignment);
