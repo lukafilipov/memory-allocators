@@ -7,7 +7,8 @@
 using namespace std;
 
 BuddyAllocator::BuddyAllocator(const size_t totalSize, const size_t minimumSize) : Allocator(totalSize), m_minimumSize(minimumSize),
-                                                                                   m_levels(intLog2(totalSize) - intLog2(minimumSize) + 1)
+                                                                                   m_levels(intLog2(totalSize) - intLog2(minimumSize) + 1),
+                                                                                   m_freeBitmap(1 << m_levels - 1)
 {
     if (!isLog(totalSize) || !isLog(minimumSize))
         error("Arguments must be a power of two");
@@ -40,6 +41,7 @@ void BuddyAllocator::Reset()
     initializePointers();
     putBlock(0,0);
     m_peak = m_used = 0;
+    m_freeBitmap = 1 << m_levels - 1;
 }
 
 void *BuddyAllocator::Allocate(const size_t size, const std::size_t alignment)
@@ -47,11 +49,11 @@ void *BuddyAllocator::Allocate(const size_t size, const std::size_t alignment)
     if (size == 0)
         return nullptr;
     byte levelToAllocate = firstBiggerLog(size);
-    byte level = firstFreeLevel(levelToAllocate);
-    if (level == 0xFF)
+    if (m_freeBitmap >> (m_levels - 1 - levelToAllocate) == 0)
         return nullptr;
-    else 
+    else
         increaseUsage(levelToAllocate);
+    byte level = firstFreeLevel(levelToAllocate);
     size_t address = fragmentAndAllocate(level, levelToAllocate);
     return (void*)((byte*)m_data + address);
 }
@@ -88,16 +90,6 @@ void BuddyAllocator::initializePointers()
     block[1] = 1;
 }
 
-byte BuddyAllocator::firstFreeLevel(byte levelToAllocate)
-{
-    for (byte i = levelToAllocate; i >= 0; i--)
-    {
-        if (m_freeLists[i] != SIZE_T_MAX)
-            return i;
-    }
-    return 0xFF;
-}
-
 size_t BuddyAllocator::fragmentAndAllocate(byte level, byte levelToAllocate)
 {
     while (level != levelToAllocate)
@@ -115,6 +107,8 @@ size_t BuddyAllocator::getBlock(byte level)
     //Update head of the list to point to the next field of the current head
     size_t *block = (size_t *)((byte *)m_data + address);
     m_freeLists[level] = block[1];
+    if(m_freeLists[level] == SIZE_T_MAX)
+        m_freeBitmap &= ~(1 << m_levels - level - 1);
 
     //Mark block as allocated
     size_t index = getIndex(address, level);
@@ -126,6 +120,7 @@ size_t BuddyAllocator::getBlock(byte level)
 void BuddyAllocator::putBlock(size_t address, byte level)
 {
     putBlockInFreeList(address, level);
+    m_freeBitmap |= 1 << m_levels - level - 1;
 
     //Mark block as deallocated
     size_t index = getIndex(address, level);
@@ -179,7 +174,11 @@ void BuddyAllocator::eraseBlock(size_t address, byte level)
 {
     size_t *block = (size_t *)((byte *)m_data + address);
     if (m_freeLists[level] == address)
+    {
         m_freeLists[level] = block[1];
+        if(m_freeLists[level] == SIZE_T_MAX)
+            m_freeBitmap &= ~(1 << m_levels - level - 1);
+    }
     else if (block[1] == SIZE_T_MAX)
     {
         size_t *prevBlock = (size_t *)((byte *)m_data + block[0]);
@@ -192,6 +191,7 @@ void BuddyAllocator::eraseBlock(size_t address, byte level)
         prevBlock[1] = block[1];
         nextBlock[0] = block[0];
     }
+
 }
 
 size_t BuddyAllocator::getIndex(size_t address, byte level)

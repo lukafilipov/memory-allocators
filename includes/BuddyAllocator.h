@@ -16,6 +16,7 @@ protected:
     void *m_data = nullptr;
 	std::size_t m_minimumSize;
 	byte m_levels;
+	std::size_t m_freeBitmap = 0;
 	
 	std::size_t *m_freeLists;
 	byte *m_blockIndex;
@@ -57,6 +58,11 @@ private:
 		else
 			return m_levels - (intLog2(size) + 1 - intLog2(m_minimumSize)) - 1;
 	}
+	byte firstFreeLevel(byte levelToAllocate)
+	{
+		byte shift = m_levels - 1 - levelToAllocate;
+    	return m_levels - ((byte)__builtin_ctz(m_freeBitmap >> shift) + shift) - 1;
+	}
 	void error(std::string error)
 	{
 		std::cout << error << std::endl;
@@ -65,9 +71,7 @@ private:
 	void initializeSizes();
 	
 	void initializePointers();
-	
-	byte firstFreeLevel(byte levelToAllocate);
-	
+		
 	std::size_t fragmentAndAllocate(byte freeLevel, byte levelToAllocate);
 	
 	std::size_t findFreeBuddy(size_t address);
