@@ -13,8 +13,10 @@ set(SOURCES src/Allocator.cpp src/CAllocator.cpp src/LinearAllocator.cpp src/Sta
 add_compile_options(
 	-std=c++11
 #        -D_DEBUG
-        -g
+#        -g
 ) 
+
+add_definitions(-DBUILTIN_CTZ_EXISTS)
 
 # main.cpp
 add_executable(main ${SOURCES})
